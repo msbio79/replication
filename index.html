@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>DNA 복제 과정 시뮬레이션</title>
+    <!-- Google Fonts: Outfit, Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css?v=2">
+</head>
+<body data-theme="dark">
+    <!-- 사이드바 열기 전용 플로팅 버튼 (사이드바가 닫혔을 때 노출됨) -->
+    <button id="sidebar-open-btn" class="floating-btn" aria-label="메뉴 열기">
+        <i class="fa-solid fa-bars"></i>
+    </button>
+
+    <div class="app-container">
+        <!-- 왼쪽 메뉴 영역 (사이드바) -->
+        <aside id="sidebar" class="sidebar">
+            <div class="sidebar-header">
+                <div class="header-title">
+                    <i class="fa-solid fa-dna logo-icon"></i>
+                    <span>DNA Replication</span>
+                </div>
+                <div class="header-actions">
+                    <!-- 테마 변경 토글 버튼 -->
+                    <button id="theme-toggle" class="icon-btn" title="화면 모드 변경" aria-label="테마 전환">
+                        <i class="fa-solid fa-sun icon-light"></i>
+                        <i class="fa-solid fa-moon icon-dark"></i>
+                    </button>
+                    <!-- 사이드바 접기 버튼 -->
+                    <button id="sidebar-close-btn" class="icon-btn" title="메뉴 접기" aria-label="메뉴 접기">
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="sidebar-content">
+                <!-- 소개 카드 -->
+                <div class="card intro-card">
+                    <h1>DNA 복제 시뮬레이션</h1>
+                    <p>DNA 이중나선이 풀리며 선도가닥과 지연가닥이 복제되는 생명과학 과정을 상호작용하며 학습합니다.</p>
+                </div>
+
+                <!-- 제어 판넬 -->
+                <div class="card control-card">
+                    <h2 class="card-title"><i class="fa-solid fa-sliders"></i> 시뮬레이션 제어</h2>
+                    
+                    <div class="control-grid">
+                        <button id="btn-prev" class="control-btn">
+                            <i class="fa-solid fa-backward-step"></i> 이전 단계
+                        </button>
+                        <button id="btn-play" class="control-btn primary">
+                            <i class="fa-solid fa-play"></i> 재생
+                        </button>
+                        <button id="btn-step" class="control-btn">
+                            <i class="fa-solid fa-forward-step"></i> 다음 단계
+                        </button>
+                        <button id="btn-reset" class="control-btn danger full-row">
+                            <i class="fa-solid fa-rotate-left"></i> 처음으로
+                        </button>
+                    </div>
+
+                    <div class="slider-group">
+                        <div class="slider-label">
+                            <span>복제 속도</span>
+                            <span id="speed-value">1.0x</span>
+                        </div>
+                        <input type="range" id="slider-speed" min="0.1" max="3" step="0.1" value="1.0">
+                    </div>
+                </div>
+
+                <!-- 단계별 네비게이션 -->
+                <div class="card stages-card">
+                    <h2 class="card-title"><i class="fa-solid fa-list-ol"></i> 복제 단계별 보기</h2>
+                    <ul class="stages-list">
+                        <li class="stage-item active" data-stage="0">
+                            <span class="stage-num">0</span>
+                            <span class="stage-name">복제 준비 (이중나선)</span>
+                        </li>
+                        <li class="stage-item" data-stage="1">
+                            <span class="stage-num">1</span>
+                            <span class="stage-name">이중나선 풀림 (헬리케이스)</span>
+                        </li>
+                        <li class="stage-item" data-stage="2">
+                            <span class="stage-num">2</span>
+                            <span class="stage-name">RNA 프라이머 결합 (프라이메이스)</span>
+                        </li>
+                        <li class="stage-item" data-stage="3">
+                            <span class="stage-num">3</span>
+                            <span class="stage-name">선도가닥 연속 합성 (중합효소)</span>
+                        </li>
+                        <li class="stage-item" data-stage="4">
+                            <span class="stage-num">4</span>
+                            <span class="stage-name">지연가닥 불연속 합성 (오카자키 절편)</span>
+                        </li>
+                        <li class="stage-item" data-stage="5">
+                            <span class="stage-num">5</span>
+                            <span class="stage-name">프라이머 제거 및 가닥 연결 (연결효소)</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 범례 (Legend) -->
+                <div class="card legend-card">
+                    <h2 class="card-title"><i class="fa-solid fa-circle-info"></i> 범례 및 기호</h2>
+                    
+                    <h3 class="legend-sub">염기쌍 (Base Pairs)</h3>
+                    <div class="legend-grid bases">
+                        <div class="legend-item"><span class="base-badge a">A</span> 아데닌 (Adenine)</div>
+                        <div class="legend-item"><span class="base-badge t">T</span> 티민 (Thymine)</div>
+                        <div class="legend-item"><span class="base-badge g">G</span> 구아닌 (Guanine)</div>
+                        <div class="legend-item"><span class="base-badge c">C</span> 사이토신 (Cytosine)</div>
+                        <div class="legend-item"><span class="base-badge u">U</span> 우라실 (RNA 프라이머용)</div>
+                    </div>
+
+                    <h3 class="legend-sub">효소 및 분자 (Enzymes & Molecules)</h3>
+                    <div class="legend-grid enzymes">
+                        <div class="legend-item"><span class="enzyme-color helicase"></span> 헬리케이스 (이중나선 해체)</div>
+                        <div class="legend-item"><span class="enzyme-color primase"></span> 프라이메이스 (RNA 프라이머 합성)</div>
+                        <div class="legend-item"><span class="enzyme-color polymerase"></span> DNA 중합효소 (새 가닥 합성)</div>
+                        <div class="legend-item"><span class="enzyme-color ligase"></span> DNA 연결효소 (절편 연결)</div>
+                    </div>
+                </div>
+
+                <!-- 이론 카드 -->
+                <div class="card theory-card">
+                    <h2 class="card-title"><i class="fa-solid fa-book-open"></i> 핵심 과학 개념</h2>
+                    <div class="theory-content">
+                        <h4>5' → 3' 방향성</h4>
+                        <p>DNA 중합효소는 오직 새 가닥의 5' 말단에서 3' 말단 방향으로만 뉴클레오타이드를 추가할 수 있습니다. 즉, 템플릿(주형) 가닥의 3'에서 5' 방향으로 이동합니다.</p>
+                        
+                        <h4>선도가닥 (Leading Strand)</h4>
+                        <p>복제 분기점이 열리는 방향과 동일하게 5' → 3' 방향으로 연속적으로 합성되는 가닥입니다.</p>
+                        
+                        <h4>지연가닥 (Lagging Strand)</h4>
+                        <p>복제 분기점이 열리는 반대 방향으로 합성되기 때문에, 짧은 단편(오카자키 절편) 형태로 불연속적으로 합성되는 가닥입니다. 이후 연결효소에 의해 이어집니다.</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 오른쪽 시뮬레이션 영역 -->
+        <main class="main-content">
+            <div id="canvas-container" class="canvas-container">
+                <canvas id="simulation-canvas"></canvas>
+                
+                <!-- 화면에 겹쳐서 표시되는 상태/팁 정보 -->
+                <div class="canvas-overlay top-left">
+                    <div id="status-badge" class="badge">준비 완료</div>
+                </div>
+                <div class="canvas-overlay top-right">
+                    <div id="zoom-indicator" class="zoom-badge">100%</div>
+                    <div class="canvas-zoom-controls">
+                        <button id="btn-zoom-in" class="canvas-icon-btn" title="확대" aria-label="확대">
+                            <i class="fa-solid fa-magnifying-glass-plus"></i>
+                        </button>
+                        <button id="btn-zoom-out" class="canvas-icon-btn" title="축소" aria-label="축소">
+                            <i class="fa-solid fa-magnifying-glass-minus"></i>
+                        </button>
+                        <button id="btn-zoom-reset" class="canvas-icon-btn" title="화면 맞춤" aria-label="화면 맞춤">
+                            <i class="fa-solid fa-arrows-to-eye"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 터치용 간단 조작 힌트 -->
+                <div class="canvas-overlay bottom-center">
+                    <div class="touch-hint">
+                        <i class="fa-solid fa-hand-pointer"></i> 드래그하여 화면 이동 | 핀치하여 확대/축소
+                    </div>
+                </div>
+
+                <!-- 미니 가이드 박스 -->
+                <div class="explanation-box" id="guide-box">
+                    <h3 id="guide-title">1단계: 이중나선 풀림</h3>
+                    <p id="guide-desc">DNA 복제 시작 부분입니다. 헬리케이스 효소가 DNA 가닥 사이의 수소 결합을 끊으면서 이중나선을 풀어줍니다.</p>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 스크립트 파일 로드 -->
+    <script src="script.js?v=2"></script>
+</body>
+</html>
