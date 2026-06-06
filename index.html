@@ -177,8 +177,41 @@
 
                 <!-- 미니 가이드 박스 -->
                 <div class="explanation-box" id="guide-box">
-                    <h3 id="guide-title">1단계: 이중나선 풀림</h3>
-                    <p id="guide-desc">DNA 복제 시작 부분입니다. 헬리케이스 효소가 DNA 가닥 사이의 수소 결합을 끊으면서 이중나선을 풀어줍니다.</p>
+                    <div class="guide-header">
+                        <h3 id="guide-title">1단계: 이중나선 풀림</h3>
+                        <button id="guide-toggle-btn" class="guide-toggle-btn" title="설명 접기/펼치기" aria-label="설명 접기/펼치기">
+                            <i class="fa-solid fa-chevron-down"></i>
+                        </button>
+                    </div>
+                    <div id="guide-body" class="guide-body">
+                        <p id="guide-desc">DNA 복제 시작 부분입니다. 헬리케이스 효소가 DNA 가닥 사이의 수소 결합을 끊으면서 이중나선을 풀어줍니다.</p>
+                    </div>
+                </div>
+
+                <!-- 사이드바 접혔을 때 나타나는 플로팅 컨트롤 패널 -->
+                <div id="canvas-controls-panel" class="canvas-controls-panel" style="display:none;">
+                    <div class="canvas-ctrl-group">
+                        <button id="cc-prev" class="canvas-ctrl-btn" title="이전 단계" aria-label="이전 단계">
+                            <i class="fa-solid fa-backward-step"></i>
+                        </button>
+                        <button id="cc-play" class="canvas-ctrl-btn primary" title="재생/일시정지" aria-label="재생/일시정지">
+                            <i class="fa-solid fa-play"></i>
+                        </button>
+                        <button id="cc-step" class="canvas-ctrl-btn" title="다음 단계" aria-label="다음 단계">
+                            <i class="fa-solid fa-forward-step"></i>
+                        </button>
+                        <button id="cc-reset" class="canvas-ctrl-btn danger" title="처음으로" aria-label="처음으로">
+                            <i class="fa-solid fa-rotate-left"></i>
+                        </button>
+                    </div>
+                    <div class="canvas-ctrl-stages">
+                        <button class="canvas-stage-btn" data-cc-stage="0" title="복제 준비">0</button>
+                        <button class="canvas-stage-btn" data-cc-stage="1" title="이중나선 풀림">1</button>
+                        <button class="canvas-stage-btn" data-cc-stage="2" title="RNA 프라이머">2</button>
+                        <button class="canvas-stage-btn" data-cc-stage="3" title="선도가닥 합성">3</button>
+                        <button class="canvas-stage-btn" data-cc-stage="4" title="지연가닥 합성">4</button>
+                        <button class="canvas-stage-btn" data-cc-stage="5" title="프라이머 제거">5</button>
+                    </div>
                 </div>
             </div>
         </main>

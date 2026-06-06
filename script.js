@@ -186,7 +186,8 @@ function updateZoomIndicator() {
 
 // Custom theme variable retrieval from documentElement (root) with safe fallback values
 function getThemeColor(varName, fallbackColor = '#ffffff') {
-    const val = getComputedStyle(document.documentElement).getPropertyValue(varName).trim();
+    // Read from body since data-theme is set on body, not documentElement
+    const val = getComputedStyle(document.body).getPropertyValue(varName).trim();
     return val || fallbackColor;
 }
 
@@ -635,6 +636,9 @@ function draw() {
         // Draw Nucleotides
         drawNucleotides(state);
 
+        // Draw Primer Labels (brackets over RNA primer regions)
+        drawPrimerLabels(state);
+
         // Draw Enzymes
         drawEnzymes(state);
 
@@ -912,6 +916,91 @@ function drawNucleotides(state) {
     }
 }
 
+// Draw "프라이머" bracket labels — positioned OUTSIDE the DNA (beyond the template strand)
+function drawPrimerLabels(state) {
+    const isDark = document.body.getAttribute('data-theme') === 'dark';
+    const primerColor = isDark ? 'rgba(217, 70, 239, 0.9)' : 'rgba(162, 28, 175, 0.95)';
+    const bgColor    = isDark ? 'rgba(15, 19, 26, 0.82)' : 'rgba(255, 255, 255, 0.9)';
+
+    ctx.save();
+    ctx.font = 'bold 11px ' + varFont('font-primary', 'sans-serif');
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+
+    function drawBracket(startIdx, endIdx, strandType) {
+        const startInfo = getBaseDrawInfo(startIdx, strandType, state);
+        const endInfo   = getBaseDrawInfo(endIdx,   strandType, state);
+
+        const x1   = startInfo.x - BASE_WIDTH / 2;
+        const x2   = endInfo.x   + BASE_WIDTH / 2;
+        const midX = (x1 + x2) / 2;
+
+        // Position on the COMPLEMENT (pink primer) side — beyond the capsule tip
+        const compY   = startInfo.yComplement;
+        const compDir = startInfo.complementDir; // 'up' for top, 'down' for bottom
+        const OUTER_GAP = 18; // px beyond the complement capsule tip
+        const TICK      = 7;
+
+        // top strand: complement goes UP → label further up (more negative)
+        // bottom strand: complement goes DOWN → label further down (more positive)
+        const lineY = compDir === 'up'
+            ? compY - BASE_HEIGHT - 2 - OUTER_GAP
+            : compY + BASE_HEIGHT + 2 + OUTER_GAP;
+
+        // Bracket line
+        ctx.strokeStyle = primerColor;
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        ctx.moveTo(x1, lineY);
+        ctx.lineTo(x2, lineY);
+        ctx.stroke();
+
+        // Ticks pointing toward the RNA primer capsules
+        const tickDir = compDir === 'up' ? 1 : -1;
+        ctx.beginPath();
+        ctx.moveTo(x1, lineY); ctx.lineTo(x1, lineY + TICK * tickDir);
+        ctx.moveTo(x2, lineY); ctx.lineTo(x2, lineY + TICK * tickDir);
+        ctx.stroke();
+
+        // Label background pill
+        const label = '프라이머';
+        const tw = ctx.measureText(label).width;
+        const padX = 5, padY = 3;
+        ctx.fillStyle = bgColor;
+        ctx.beginPath();
+        ctx.roundRect(midX - tw / 2 - padX, lineY - 8 - padY, tw + padX * 2, 16 + padY * 2, 5);
+        ctx.fill();
+
+        // Label text
+        ctx.fillStyle = primerColor;
+        ctx.fillText(label, midX, lineY);
+    }
+
+    // Find consecutive RNA runs in top strand
+    let runStart = -1;
+    for (let i = 0; i <= NUM_BASES; i++) {
+        const isRna = i < NUM_BASES && state.topReplication[i] === 'RNA';
+        if (isRna && runStart === -1) { runStart = i; }
+        else if (!isRna && runStart !== -1) {
+            drawBracket(runStart, i - 1, 'top');
+            runStart = -1;
+        }
+    }
+
+    // Find consecutive RNA runs in bottom strand
+    runStart = -1;
+    for (let i = 0; i <= NUM_BASES; i++) {
+        const isRna = i < NUM_BASES && state.bottomReplication[i] === 'RNA';
+        if (isRna && runStart === -1) { runStart = i; }
+        else if (!isRna && runStart !== -1) {
+            drawBracket(runStart, i - 1, 'bottom');
+            runStart = -1;
+        }
+    }
+
+    ctx.restore();
+}
+
 function varFont(cssVar, fallback) {
     return getThemeColor('--' + cssVar) || fallback;
 }
@@ -1117,15 +1206,18 @@ function drawLabels(state) {
     // Helper to draw clean circular terminal label badge (5' or 3')
     function drawTerminalBadge(x, y, label) {
         ctx.save();
-        ctx.fillStyle = 'rgba(15, 19, 26, 0.85)';
-        ctx.strokeStyle = getThemeColor('--border-color');
-        ctx.lineWidth = 1.5;
+        const isDark = document.body.getAttribute('data-theme') === 'dark';
+        // Background
+        ctx.fillStyle = isDark ? 'rgba(15, 19, 26, 0.88)' : 'rgba(255, 255, 255, 0.96)';
+        // Border — more visible in light mode
+        ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.18)' : '#94a3b8';
+        ctx.lineWidth = isDark ? 1.5 : 2;
         ctx.beginPath();
         ctx.arc(x, y, 22, 0, Math.PI * 2);
         ctx.fill();
         ctx.stroke();
-
-        ctx.fillStyle = getThemeColor('--text-main');
+        // Text — always high-contrast regardless of theme
+        ctx.fillStyle = isDark ? '#f3f4f6' : '#1e293b';
         ctx.fillText(label, x, y + 1);
         ctx.restore();
     }
@@ -1200,10 +1292,24 @@ function drawLabels(state) {
         drawPointerLabel('지연 가닥 합성 (Lagging strand synthesis)', state.polyBottom.x - 180, state.polyBottom.y + 110, state.polyBottom.x, state.polyBottom.y + 35);
     }
 
-    // Leading Strand label
-    if (state.topReplication[12] === 'DNA') {
-        const lCoord = getStrandCoords(13, 'top', state);
-        drawPointerLabel('선도 가닥 (Leading Strand)', lCoord.x + 80, lCoord.y + 70, lCoord.x, lCoord.y + 20);
+    // Leading Strand label — label box moves DOWN into the open central gap
+    if (state.topReplication[8] === 'DNA') {
+        const lInfo = getBaseDrawInfo(8, 'top', state);
+        drawPointerLabel(
+            '선도 가닥 (Leading Strand)',
+            lInfo.x + 60, lInfo.yComplement + 45,  // below backbone → central gap
+            lInfo.x,      lInfo.yComplement          // arrow tip: red backbone
+        );
+    }
+
+    // Lagging Strand label — label box moves UP into the open central gap
+    if (state.bottomReplication[5] === 'DNA') {
+        const lagInfo = getBaseDrawInfo(5, 'bottom', state);
+        drawPointerLabel(
+            '지연 가닥 (Lagging Strand)',
+            lagInfo.x + 60, lagInfo.yComplement - 60,  // above backbone → central gap
+            lagInfo.x,      lagInfo.yComplement          // arrow tip: red backbone
+        );
     }
 
     ctx.restore();
@@ -1211,8 +1317,8 @@ function drawLabels(state) {
 
 function drawPointerLabel(text, tx, ty, targetX, targetY) {
     const isDark = document.body.getAttribute('data-theme') === 'dark';
-    
-    // Draw indicator line using resolved color variable
+
+    // Indicator line
     ctx.strokeStyle = getThemeColor('--primary-color');
     ctx.lineWidth = 1.5;
     ctx.beginPath();
@@ -1228,18 +1334,19 @@ function drawPointerLabel(text, tx, ty, targetX, targetY) {
 
     // Text box background
     ctx.save();
-    ctx.fillStyle = isDark ? 'rgba(30, 39, 54, 0.9)' : 'rgba(255, 255, 255, 0.95)';
-    ctx.strokeStyle = getThemeColor('--border-color');
-    ctx.lineWidth = 1;
+    ctx.fillStyle = isDark ? 'rgba(30, 39, 54, 0.92)' : 'rgba(255, 255, 255, 0.97)';
+    ctx.strokeStyle = isDark ? 'rgba(255,255,255,0.12)' : '#94a3b8';
+    ctx.lineWidth = isDark ? 1 : 1.5;
     ctx.font = 'bold 13px ' + varFont('font-primary', 'sans-serif');
-    
+
     const textWidth = ctx.measureText(text).width;
     ctx.beginPath();
     ctx.roundRect(tx - 10, ty - 12, textWidth + 20, 26, 6);
     ctx.fill();
     ctx.stroke();
 
-    ctx.fillStyle = getThemeColor('--text-main');
+    // Always high-contrast text
+    ctx.fillStyle = isDark ? '#f3f4f6' : '#1e293b';
     ctx.fillText(text, tx, ty + 5);
     ctx.restore();
 }
@@ -1296,11 +1403,23 @@ function setupControls() {
     const sidebarCloseBtn = document.getElementById('sidebar-close-btn');
     const sidebarOpenBtn = document.getElementById('sidebar-open-btn');
     const sidebar = document.getElementById('sidebar');
+    const canvasControlsPanel = document.getElementById('canvas-controls-panel');
+
+    // Helper: sync floating panel visibility with sidebar state
+    function syncCanvasPanel() {
+        const collapsed = sidebar.classList.contains('collapsed');
+        const mobileHidden = window.innerWidth <= 768 && !sidebar.classList.contains('active');
+        const shouldShow = collapsed || mobileHidden;
+        canvasControlsPanel.style.display = shouldShow ? 'flex' : 'none';
+        // Toggle class so CSS can push the explanation box above the panel
+        canvasContainer.classList.toggle('panel-visible', shouldShow);
+    }
 
     // Sidebar Slide Controls
     sidebarCloseBtn.addEventListener('click', () => {
         sidebar.classList.add('collapsed');
         sidebarOpenBtn.style.display = 'flex'; // 데스크톱에서도 오픈 버튼 강제 노출
+        syncCanvasPanel();
         // trigger canvas resizing
         setTimeout(resizeCanvas, 400);
     });
@@ -1309,6 +1428,7 @@ function setupControls() {
         sidebar.classList.remove('collapsed');
         sidebar.classList.add('active'); // mobile view trigger
         sidebarOpenBtn.style.display = ''; // 기본 CSS 값으로 복구 (모바일 flex, 데스크톱 none)
+        syncCanvasPanel();
         setTimeout(resizeCanvas, 400);
     });
 
@@ -1317,10 +1437,14 @@ function setupControls() {
         if (window.innerWidth <= 768) {
             if (!sidebar.contains(e.target) && !sidebarOpenBtn.contains(e.target) && sidebar.classList.contains('active')) {
                 sidebar.classList.remove('active');
+                syncCanvasPanel();
                 setTimeout(resizeCanvas, 400);
             }
         }
     });
+
+    // Initial sync on mobile (sidebar starts hidden on small screens)
+    if (window.innerWidth <= 768) syncCanvasPanel();
 
     // Theme Switch
     themeToggle.addEventListener('click', () => {
@@ -1334,6 +1458,7 @@ function setupControls() {
         isPlaying = !isPlaying;
         playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i> 일시정지' : '<i class="fa-solid fa-play"></i> 재생';
         document.getElementById('status-badge').innerText = isPlaying ? '시뮬레이션 재생 중' : '일시정지됨';
+        syncCCPlayBtn();
     });
 
     // Reset controls
@@ -1346,6 +1471,7 @@ function setupControls() {
         floatingBases.length = 0;
         setStageUI(0);
         resetView();
+        syncCCPlayBtn();
     });
 
     // Step Frame controls
@@ -1355,6 +1481,7 @@ function setupControls() {
         simulationTime += 15;
         if (simulationTime > 1000) simulationTime = 0;
         updateActiveStageFromTime();
+        syncCCPlayBtn();
     });
 
     // Step Backward controls
@@ -1364,6 +1491,7 @@ function setupControls() {
         simulationTime -= 15;
         if (simulationTime < 0) simulationTime = 1000;
         updateActiveStageFromTime();
+        syncCCPlayBtn();
     });
 
     // Speed Slider
@@ -1387,7 +1515,7 @@ function setupControls() {
         resetView();
     });
 
-    // Interactive Stage Items
+    // Interactive Stage Items (sidebar)
     const stageItems = document.querySelectorAll('.stage-item');
     stageItems.forEach(item => {
         item.addEventListener('click', () => {
@@ -1395,8 +1523,80 @@ function setupControls() {
             isPlaying = false;
             playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 재생';
             setStage(stageNum);
+            syncCCPlayBtn();
         });
     });
+
+    // ── Canvas floating control panel buttons ──
+    const ccPlayBtn = document.getElementById('cc-play');
+    const ccPrevBtn = document.getElementById('cc-prev');
+    const ccStepBtn = document.getElementById('cc-step');
+    const ccResetBtn = document.getElementById('cc-reset');
+
+    // Sync the floating play button icon with actual play state
+    function syncCCPlayBtn() {
+        ccPlayBtn.innerHTML = isPlaying
+            ? '<i class="fa-solid fa-pause"></i>'
+            : '<i class="fa-solid fa-play"></i>';
+    }
+
+    ccPlayBtn.addEventListener('click', () => {
+        isPlaying = !isPlaying;
+        playBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i> 일시정지' : '<i class="fa-solid fa-play"></i> 재생';
+        document.getElementById('status-badge').innerText = isPlaying ? '시뮬레이션 재생 중' : '일시정지됨';
+        syncCCPlayBtn();
+    });
+
+    ccPrevBtn.addEventListener('click', () => {
+        isPlaying = false;
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 재생';
+        simulationTime -= 15;
+        if (simulationTime < 0) simulationTime = 1000;
+        updateActiveStageFromTime();
+        syncCCPlayBtn();
+    });
+
+    ccStepBtn.addEventListener('click', () => {
+        isPlaying = false;
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 재생';
+        simulationTime += 15;
+        if (simulationTime > 1000) simulationTime = 0;
+        updateActiveStageFromTime();
+        syncCCPlayBtn();
+    });
+
+    ccResetBtn.addEventListener('click', () => {
+        simulationTime = 50;
+        isPlaying = false;
+        playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 재생';
+        document.getElementById('status-badge').innerText = '준비 완료';
+        particles.length = 0;
+        floatingBases.length = 0;
+        setStageUI(0);
+        resetView();
+        syncCCPlayBtn();
+    });
+
+    // Canvas stage buttons (0–5)
+    const ccStageBtns = document.querySelectorAll('.canvas-stage-btn');
+    ccStageBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            const stageNum = parseInt(btn.getAttribute('data-cc-stage'));
+            isPlaying = false;
+            playBtn.innerHTML = '<i class="fa-solid fa-play"></i> 재생';
+            setStage(stageNum);
+            syncCCPlayBtn();
+        });
+    });
+
+    // ── Guide box collapse/expand toggle ──
+    const guideBox = document.getElementById('guide-box');
+    const guideToggleBtn = document.getElementById('guide-toggle-btn');
+    if (guideToggleBtn && guideBox) {
+        guideToggleBtn.addEventListener('click', () => {
+            guideBox.classList.toggle('collapsed');
+        });
+    }
 }
 
 // Set specific stage state and timeline
@@ -1423,6 +1623,16 @@ function setStageUI(stageNum) {
             item.classList.add('active');
         } else {
             item.classList.remove('active');
+        }
+    });
+
+    // Sync canvas floating stage buttons
+    const ccStageBtns = document.querySelectorAll('.canvas-stage-btn');
+    ccStageBtns.forEach(btn => {
+        if (parseInt(btn.getAttribute('data-cc-stage')) === stageNum) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
         }
     });
 

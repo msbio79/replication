@@ -366,6 +366,10 @@ input[type="range"] {
     -webkit-appearance: none;
 }
 
+[data-theme="light"] input[type="range"] {
+    background: rgba(0, 0, 0, 0.12);
+}
+
 input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
     width: 18px;
@@ -400,14 +404,27 @@ input[type="range"]::-webkit-slider-thumb:hover {
     transition: all 0.2s ease;
 }
 
+[data-theme="light"] .stage-item {
+    background: rgba(0, 0, 0, 0.03);
+    border-color: rgba(0, 0, 0, 0.1);
+}
+
 .stage-item:hover {
     background: rgba(255, 255, 255, 0.08);
     transform: translateX(4px);
 }
 
+[data-theme="light"] .stage-item:hover {
+    background: rgba(0, 0, 0, 0.06);
+}
+
 .stage-item.active {
     background: rgba(59, 130, 246, 0.15);
     border-color: var(--primary-color);
+}
+
+[data-theme="light"] .stage-item.active {
+    background: rgba(29, 78, 216, 0.1);
 }
 
 .stage-num {
@@ -421,6 +438,11 @@ input[type="range"]::-webkit-slider-thumb:hover {
     font-size: 0.8rem;
     font-weight: 700;
     color: var(--text-main);
+}
+
+[data-theme="light"] .stage-num {
+    background: rgba(0, 0, 0, 0.12);
+    color: #1e293b;
 }
 
 .stage-item.active .stage-num {
@@ -623,8 +645,13 @@ canvas:active {
     border-radius: 20px;
     font-size: 0.9rem;
     font-weight: 600;
-    color: var(--text-main);
+    color: #f3f4f6;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .badge {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-main);
 }
 
 .zoom-badge {
@@ -636,8 +663,13 @@ canvas:active {
     border-radius: 20px;
     font-size: 0.85rem;
     font-weight: 700;
-    color: var(--text-main);
+    color: #f3f4f6;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="light"] .zoom-badge {
+    background: rgba(255, 255, 255, 0.92);
+    color: var(--text-main);
 }
 
 .touch-hint {
@@ -659,34 +691,137 @@ canvas:active {
     left: 50%;
     transform: translateX(-50%);
     width: 90%;
-    max-width: 700px;
+    max-width: 680px;
     background: rgba(22, 28, 38, 0.85);
     backdrop-filter: blur(var(--glass-blur));
     -webkit-backdrop-filter: blur(var(--glass-blur));
     border: 1px solid var(--border-color);
-    border-radius: 20px;
-    padding: 1.25rem 1.5rem;
+    border-radius: 14px;
+    padding: 0.65rem 1rem;
     box-shadow: var(--shadow-premium);
     z-index: 5;
-    transition: all 0.3s ease;
+    transition: left 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                right 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                bottom 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* When the floating control panel is visible:
+   - Control panel anchors to bottom-left with fixed width
+   - Explanation box fills the space to the right */
+.canvas-container.panel-visible .canvas-controls-panel {
+    left: 1.25rem;
+    transform: none;
+    width: 255px;
+    bottom: 1.25rem;
+}
+
+.canvas-container.panel-visible .explanation-box {
+    left: calc(1.25rem + 255px + 1rem);
+    transform: none;
+    right: 1.25rem;
+    width: auto;
+    max-width: none;
+    bottom: 1.25rem;
+}
+
+/* On very small screens, stack vertically instead */
+@media (max-width: 600px) {
+    .canvas-container.panel-visible .canvas-controls-panel {
+        left: 50%;
+        transform: translateX(-50%);
+        width: auto;
+        bottom: 1.25rem;
+    }
+    .canvas-container.panel-visible .explanation-box {
+        left: 50%;
+        transform: translateX(-50%);
+        right: auto;
+        width: 90%;
+        max-width: 700px;
+        bottom: calc(1.25rem + 125px + 0.75rem);
+    }
 }
 
 [data-theme="light"] .explanation-box {
     background: rgba(255, 255, 255, 0.9);
 }
 
+/* Guide box header: title + toggle button */
+.guide-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
 .explanation-box h3 {
     font-family: var(--font-display);
-    font-size: 1.2rem;
+    font-size: 0.95rem;
     font-weight: 700;
-    margin-bottom: 0.4rem;
+    margin: 0;
     color: var(--primary-color);
+    line-height: 1.3;
+    flex: 1;
+}
+
+/* Collapse/expand toggle button */
+.guide-toggle-btn {
+    width: 26px;
+    height: 26px;
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7rem;
+    flex-shrink: 0;
+    transition: all 0.2s ease;
+}
+
+.guide-toggle-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-main);
+}
+
+[data-theme="light"] .guide-toggle-btn {
+    background: rgba(0, 0, 0, 0.04);
+}
+
+/* Guide body – collapsible with smooth height animation */
+.guide-body {
+    overflow: hidden;
+    max-height: 120px;
+    transition: max-height 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                opacity 0.25s ease,
+                margin-top 0.25s ease;
+    margin-top: 0.35rem;
+    opacity: 1;
+}
+
+.explanation-box.collapsed .guide-body {
+    max-height: 0;
+    margin-top: 0;
+    opacity: 0;
+}
+
+/* Rotate icon when collapsed */
+.explanation-box.collapsed .guide-toggle-btn i {
+    transform: rotate(-90deg);
+}
+
+.guide-toggle-btn i {
+    transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .explanation-box p {
-    font-size: 0.95rem;
-    line-height: 1.5;
+    font-size: 0.82rem;
+    line-height: 1.45;
     color: var(--text-main);
+    margin: 0;
 }
 
 /* Responsive Rules */
@@ -726,6 +861,132 @@ canvas:active {
         padding: 1rem;
     }
 }
+
+/* ── Floating Canvas Controls Panel (shown when sidebar is collapsed) ── */
+.canvas-controls-panel {
+    position: absolute;
+    bottom: 1.25rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.6rem;
+    background: rgba(15, 19, 26, 0.82);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    padding: 0.85rem 1.2rem;
+    box-shadow: var(--shadow-premium);
+    animation: fadeSlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+[data-theme="light"] .canvas-controls-panel {
+    background: rgba(255, 255, 255, 0.88);
+}
+
+@keyframes fadeSlideUp {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+/* Row 1: Play/Prev/Next/Reset buttons */
+.canvas-ctrl-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.canvas-ctrl-btn {
+    width: 44px;
+    height: 44px;
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.07);
+    color: var(--text-main);
+    font-size: 1.1rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+}
+
+.canvas-ctrl-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    transform: scale(1.08);
+}
+
+.canvas-ctrl-btn:active {
+    transform: scale(0.95);
+}
+
+.canvas-ctrl-btn.primary {
+    background: var(--primary-color);
+    border-color: transparent;
+    color: #fff;
+    width: 52px;
+    height: 52px;
+    font-size: 1.25rem;
+    border-radius: 50%;
+    box-shadow: 0 0 14px rgba(59,130,246,0.45);
+}
+
+.canvas-ctrl-btn.primary:hover {
+    background: var(--primary-hover);
+    box-shadow: 0 0 20px rgba(59,130,246,0.65);
+}
+
+.canvas-ctrl-btn.danger {
+    color: var(--danger-color);
+    border-color: rgba(239, 68, 68, 0.25);
+}
+
+.canvas-ctrl-btn.danger:hover {
+    background: rgba(239, 68, 68, 0.18);
+    border-color: var(--danger-color);
+}
+
+/* Row 2: Stage number buttons */
+.canvas-ctrl-stages {
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+}
+
+.canvas-stage-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: rgba(255, 255, 255, 0.06);
+    color: var(--text-muted);
+    font-size: 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.18s ease;
+    font-family: var(--font-display);
+}
+
+.canvas-stage-btn:hover {
+    background: rgba(255, 255, 255, 0.14);
+    color: var(--text-main);
+    transform: scale(1.1);
+}
+
+.canvas-stage-btn.active {
+    background: var(--primary-color);
+    border-color: transparent;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(59,130,246,0.4);
+}
+
+/* ── End Floating Canvas Controls ── */
 
 @media (max-height: 600px) {
     .explanation-box {
